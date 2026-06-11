@@ -49,7 +49,7 @@ body::after{
   background:radial-gradient(ellipse at center,rgba(0,20,12,0.96),rgba(2,8,5,0.99));
   backdrop-filter:blur(12px);animation:bootHide 5.2s ease forwards;
 }
-@keyframes bootHide{0%,75%{opacity:1;visibility:visible;}100%{opacity:0;visibility:hidden;pointer-events:none;}}
+@keyframes bootHide{0%,75%{opacity:1;visibility:visible;}99%{opacity:0;visibility:hidden;pointer-events:none;}100%{opacity:0;visibility:hidden;pointer-events:none;display:none;}}
 .boot-panel{
   width:min(820px,calc(100vw - 32px));
   background:linear-gradient(180deg,rgba(4,18,11,0.94),rgba(2,12,8,0.96));
@@ -81,6 +81,11 @@ body::after{
 .wrap{position:relative;z-index:1;max-width:1440px;margin:0 auto;padding:24px 24px 56px;}
 @keyframes fadeUp{from{opacity:0;transform:translateY(22px) scale(.98);}to{opacity:1;transform:translateY(0) scale(1);}}
 
+/* suppress long delays on refresh (body.booted added by JS) */
+body.booted nav,
+body.booted .card,
+body.booted .kpi-card{animation-delay:0s!important;}
+
 /* NAV */
 nav{
   position:sticky;top:12px;z-index:10;
@@ -97,12 +102,14 @@ nav{
 }
 .brand-text h1{font-size:16px;font-weight:700;letter-spacing:.02em;}
 .brand-text p{font-size:11px;color:var(--muted);letter-spacing:.04em;}
+/* FIX: was <nav class="nav-links"> — now a plain div to avoid duplicate landmark */
 .nav-links{display:flex;gap:4px;margin-left:auto;flex-wrap:wrap;}
 .nav-links a{padding:8px 14px;border-radius:999px;font-size:13px;font-weight:500;color:var(--muted);text-decoration:none;transition:color var(--tr),background var(--tr);}
 .nav-links a:hover{color:var(--text);background:rgba(0,237,100,0.07);}
 .status-pill{display:inline-flex;align-items:center;gap:8px;padding:9px 14px;border-radius:999px;background:rgba(0,237,100,0.07);border:1px solid rgba(0,237,100,0.14);font-size:12px;font-weight:600;color:#d6ffe8;}
 .live-dot{width:9px;height:9px;border-radius:50%;background:var(--mongo);box-shadow:0 0 14px rgba(0,237,100,0.9);animation:livePulse 1.9s ease-in-out infinite;}
 @keyframes livePulse{0%,100%{box-shadow:0 0 6px rgba(0,237,100,0.5);}50%{box-shadow:0 0 20px rgba(0,237,100,0.9);}}
+#countdown{font-variant-numeric:tabular-nums;letter-spacing:.03em;}
 
 /* CARDS */
 .card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow);backdrop-filter:blur(16px);position:relative;overflow:hidden;animation:fadeUp .8s ease both;}
@@ -156,7 +163,8 @@ nav{
 .tag.warn{background:rgba(255,209,102,0.09);color:#ffe7ad;border:1px solid rgba(255,209,102,0.2);}
 .tag.info{background:rgba(91,200,255,0.08);color:#c7eeff;border:1px solid rgba(91,200,255,0.15);}
 .chart-card{padding:24px;display:flex;flex-direction:column;}
-.bars-wrap{display:flex;align-items:flex-end;gap:12px;flex:1;min-height:220px;margin:24px 0 36px;}
+/* FIX: overflow:visible so labels don't clip */
+.bars-wrap{display:flex;align-items:flex-end;gap:12px;flex:1;min-height:220px;margin:24px 0 36px;overflow:visible;}
 .bar-col{flex:1;border-radius:14px 14px 6px 6px;position:relative;background:linear-gradient(180deg,rgba(0,237,100,0.9),rgba(0,104,74,0.4));box-shadow:inset 0 1px 0 rgba(255,255,255,0.12),0 0 20px rgba(0,237,100,0.08);min-height:20px;animation:barGrow 1s ease both;animation-delay:calc(5.4s + var(--i,0) * .07s);transform-origin:bottom;}
 @keyframes barGrow{from{transform:scaleY(.05);opacity:.2;}to{transform:scaleY(1);opacity:1;}}
 .bar-col::before{content:attr(data-v);position:absolute;top:-26px;left:50%;transform:translateX(-50%);font-size:11px;font-family:'JetBrains Mono',monospace;color:#d5ffe8;white-space:nowrap;}
@@ -201,7 +209,17 @@ td.mono{font-family:'JetBrains Mono',monospace;font-size:12.5px;}
 
 /* RESPONSIVE */
 @media(max-width:1100px){.hero-grid,.mid-grid,.bottom-grid,.footer-grid{grid-template-columns:1fr 1fr;}.kpi-row{grid-template-columns:repeat(2,1fr);}}
-@media(max-width:700px){.hero-grid,.mid-grid,.bottom-grid,.footer-grid,.kpi-row{grid-template-columns:1fr;}.hero-headline{font-size:36px;}.nav-links{display:none;}.hero-side{display:none;}.step{grid-template-columns:48px 1fr;}.agent-row{grid-template-columns:18px 1fr auto;}}
+@media(max-width:900px){.bar-col::before,.bar-col::after{font-size:10px;}}
+/* FIX: hero-side was display:none on mobile — now flex so judges on phones see the proof cards */
+@media(max-width:700px){
+  .hero-grid,.mid-grid,.bottom-grid,.footer-grid,.kpi-row{grid-template-columns:1fr;}
+  .hero-headline{font-size:36px;}
+  .nav-links{display:none;}
+  .hero-side{display:flex;}
+  .hero-side .card{padding:18px;}
+  .step{grid-template-columns:48px 1fr;}
+  .agent-row{grid-template-columns:18px 1fr auto;}
+}
 </style>
 </head>
 <body>
@@ -235,7 +253,7 @@ td.mono{font-family:'JetBrains Mono',monospace;font-size:12.5px;}
 <div class="wrap">
 
   <!-- NAV -->
-  <nav>
+  <nav aria-label="Main navigation">
     <div class="brand">
       <div class="leaf-icon" aria-label="SENTINEL MongoDB">
         <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true">
@@ -248,6 +266,7 @@ td.mono{font-family:'JetBrains Mono',monospace;font-size:12.5px;}
         <p>MongoDB Schema Continuity Agent</p>
       </div>
     </div>
+    <!-- FIX: plain div instead of <nav> to avoid duplicate ARIA landmark -->
     <div class="nav-links">
       <a href="#pipeline">Pipeline</a>
       <a href="#violations">Violations</a>
@@ -255,7 +274,10 @@ td.mono{font-family:'JetBrains Mono',monospace;font-size:12.5px;}
       <a href="#architecture">Architecture</a>
       <a href="#stack">Stack</a>
     </div>
-    <div class="status-pill"><span class="live-dot"></span>Live remediation active</div>
+    <div class="status-pill">
+      <span class="live-dot"></span>
+      Live · Submit in <span id="countdown">--:--:--</span>
+    </div>
   </nav>
 
   <!-- HERO -->
@@ -518,12 +540,51 @@ td.mono{font-family:'JetBrains Mono',monospace;font-size:12.5px;}
 </div>
 
 <script>
-(function(){
-  const el=document.getElementById('pct');
-  let v=0;
-  const id=setInterval(()=>{v=Math.min(v+1,92);el.textContent=v+'%';if(v>=92)clearInterval(id);},47);
+(function () {
+  // Boot progress counter
+  const pctEl = document.getElementById('pct');
+  let v = 0;
+  const pctId = setInterval(() => {
+    v = Math.min(v + 1, 92);
+    pctEl.textContent = v + '%';
+    if (v >= 92) clearInterval(pctId);
+  }, 47);
+
+  // FIX: force display:none after animation + add booted class to kill long delays on refresh
+  const boot = document.getElementById('boot');
+  if (boot) {
+    boot.addEventListener('animationend', () => {
+      boot.style.display = 'none';
+      document.body.classList.add('booted');
+    }, { once: true });
+    // Fallback: if already visited, skip the wait
+    if (sessionStorage.getItem('sentinel_booted')) {
+      boot.style.display = 'none';
+      document.body.classList.add('booted');
+    } else {
+      sessionStorage.setItem('sentinel_booted', '1');
+    }
+  }
+
+  // Bar chart --i custom property
+  document.querySelectorAll('.bar-col').forEach((el, i) => {
+    el.style.setProperty('--i', i);
+  });
+
+  // FIX: live countdown to hackathon deadline 2026-06-11 16:00 CDT (UTC-5)
+  const deadline = new Date('2026-06-11T21:00:00Z').getTime();
+  const cdEl = document.getElementById('countdown');
+  function tick() {
+    const diff = Math.max(0, deadline - Date.now());
+    if (diff === 0) { cdEl.textContent = 'SUBMITTED'; return; }
+    const h = Math.floor(diff / 3600000);
+    const m = Math.floor((diff % 3600000) / 60000);
+    const s = Math.floor((diff % 60000) / 1000);
+    cdEl.textContent = h + 'h ' + String(m).padStart(2,'0') + 'm ' + String(s).padStart(2,'0') + 's';
+  }
+  tick();
+  setInterval(tick, 1000);
 })();
-document.querySelectorAll('.bar-col').forEach((el,i)=>{el.style.setProperty('--i',i);});
 </script>
 </body>
 </html>
